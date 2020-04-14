@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+
+<html lang="es-AR">
+	<head>
+		<title>Open weather</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="icon" href="http://openweathermap.org/img/wn/01d.png" sizes="32x32" type="image/png">
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	</head>
+	<body>
+		<div id="app" class='container'>
+			<div class="card mt-2 ">
+				<div class="card-header">
+				    <h4>Bienvenido</h4>
+				</div>
+				<div class="card-body">
+					<div id="actual " class="">
+						<div v-if="loading" class="spinner-grow">
+						</div>
+						<div v-else>
+							El clima ahora en <span> {{ location.toUpperCase() }} </span>
+							<p> 
+								<span><img class="img-thumbnail" :src="currentWeather.img" /></span>
+								<span>{{ currentWeather.description }} con T: {{ currentWeather.temp}}° </span>
+							</p>
+							<div v-if="forecastWeather.length>0"  class="mt-2 card" >
+							  	<div class="card-header">
+							  		<h6>Pronóstico extendido</h6>
+							  	</div>	
+							  	<div class="card-body">
+							  		<table class="table">
+									  	<thead>
+										    <tr >
+										      <th scope="col">Día</th>
+										      <th scope="col">Estado</th>
+										    </tr>
+									  	</thead>			  			
+								    	<tr v-for="weather in forecastWeather">
+									      	<td scope="col">{{ weather.date }}</td>
+									      	<td scope="col">
+									      	<span><img class="img-thumbnail" :src="currentWeather.img" /></span>
+											<span>{{ weather.description }} con T: {{ weather.temp}}° </span>
+											</td>
+								    	</tr>	
+								    </table>						    	  		
+							  	</div>			
+							</div>
+							<div v-if="errorLocation" class="alert alert-info" role="alert">
+								 No se pudo detectar su ubicación
+							</div>																
+						</div>						
+					</div>						
+					<hr/>
+					<h5 class="card-text">Buscar clima de otras ciudades</h5>
+					<div class="form-row">
+						<div class="form-group col-md-3">
+							<label for="city">Ciudad</label>
+							<input type="text" required class="form-control" v-model="city"  >
+						</div>
+					</div>
+					<div v-if="errorSearch" class="alert alert-warning" role="alert">
+						 {{ errorSearchMsg }}
+					</div>					
+					<button v-on:click="searchCity" class="btn btn-primary">Ver Clima!</button>
+				</div>
+			</div>				
+		</div>
+	
+
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+		<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+		<script type="text/javascript">
+			
+		new Vue({
+		  	el: '#app',
+			  	data () {
+			    return {
+			      location: null,
+			      currentWeather: {},
+			      forecastWeather : {},
+			      city: '',
+			      errorLocation : false,
+			      errorSearch: '',
+			      errorSearchMsg: 'No se encontraron resultados',
+			      loading : true,
+			      count: 0
+			    }
+		  	},
+			methods: {
+				getWeather: function(city){
+      				axios.get('/v1/current/' + city)
+      				.then(res => {
+      					this.currentWeather = res.data[0];
+      					axios.get('/v1/forecast/' + city)
+      					.then(resForecast =>{
+      						this.location = city;
+      						this.count++;
+      						this.loading = false;
+      						this.forecastWeather = resForecast.data;
+      					})
+      				})
+      				.catch( err => {
+      					this.errorSearch = true;
+      				} );					
+				},
+			    loadData: function () {
+			    	axios.get('/v1/location')
+      				.then(response => {
+      						this.getWeather(response.data)
+      				})
+      				.catch( err => console.log(err))
+			    },
+
+			    searchCity: function (){
+			    	this.loading = true;
+			    	this.errorSearch = false;
+			    	if (this.count == 5){
+			    		this.errorSearchMsg = "Ha llegado al límite (5) de consultas disponibles. Gracias!";
+			    		this.errorSearch = true;
+			    	}
+			    	else{
+			    		let city =  this.city;
+			    		return this.getWeather(city);				    		
+			    	}
+		    	
+			    }
+			},
+			mounted () {
+			    this.loadData();	
+			}
+		
+		});
+		</script>					
+	</body>
+</html>
+
