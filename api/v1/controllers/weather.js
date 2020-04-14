@@ -1,15 +1,13 @@
 const openApiWeather = require('../services/weather');
 const os = require( 'os' );
 
-
 const getCity = async (req) => {
 
 	var  city = req.params.city;
 	if (typeof (city)  == 'undefined'){
-		let ip = req.ip;
-		console.log(ip, ' Ip get');
-		//let randomIp =  (Math.floor(Math.random() * 255) + 1)+"."+(Math.floor(Math.random() * 255))+"."+(Math.floor(Math.random() * 255))+"."+(Math.floor(Math.random() * 255));
-		//let ipFinal = (ip == '::1') ? randomIp : ip;
+		let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+		console.log(' IP ', ip, req.headers['x-forwarded-for'])
+		console.log('remote IP', req.connection.remoteAddress)
 		const location = await openApiWeather.getDataLocationByIp(ip);
 		return `${location.city},${location.region_name}`;
 	}	
